@@ -1,0 +1,93 @@
+bundle:
+  name: agent_langgraph
+
+resources:
+  apps:
+    agent_securemcp:
+      name: "agent-securemcp"
+      description: "SecureMCP AI Agent using LangGraph, Databricks, Unity Catalog, AI Search, MCP, and governed company tools."
+      source_code_path: ./
+
+      config:
+        command: ["uv", "run", "start-app"]
+
+        env:
+          - name: MLFLOW_TRACKING_URI
+            value: "databricks"
+
+          - name: MLFLOW_REGISTRY_URI
+            value: "databricks-uc"
+
+          - name: API_PROXY
+            value: "http://localhost:8000/invocations"
+
+          - name: CHAT_APP_PORT
+            value: "3000"
+
+          - name: CHAT_PROXY_TIMEOUT_SECONDS
+            value: "300"
+
+          - name: MLFLOW_EXPERIMENT_ID
+            value_from: "experiment"
+
+      resources:
+
+        # MLflow experiment for tracing and evaluation
+        - name: "experiment"
+          experiment:
+            experiment_id: "1291819765054621"
+            permission: "CAN_EDIT"
+
+        # Llama 3.3 70B model used by the LangGraph agent
+        - name: "llm"
+          serving_endpoint:
+            name: "databricks-meta-llama-3-3-70b-instruct"
+            permission: "CAN_QUERY"
+
+        # Sales summary function
+        - name: "get_sales_summary"
+          uc_securable:
+            securable_full_name: "workspace.securemcp.get_sales_summary"
+            securable_type: "FUNCTION"
+            permission: "EXECUTE"
+
+        # Inventory status function
+        - name: "get_inventory_status"
+          uc_securable:
+            securable_full_name: "workspace.securemcp.get_inventory_status"
+            securable_type: "FUNCTION"
+            permission: "EXECUTE"
+
+        # Employee information function
+        - name: "get_employee_info"
+          uc_securable:
+            securable_full_name: "workspace.securemcp.get_employee_info"
+            securable_type: "FUNCTION"
+            permission: "EXECUTE"
+
+        # Low inventory discovery function
+        - name: "get_low_inventory_products"
+          uc_securable:
+            securable_full_name: "workspace.securemcp.get_low_inventory_products"
+            securable_type: "FUNCTION"
+            permission: "EXECUTE"
+
+        # Company knowledge AI Search index
+        - name: "company_knowledge_index"
+          uc_securable:
+            securable_full_name: "workspace.securemcp.company_knowledge_index"
+            securable_type: "TABLE"
+            permission: "SELECT"
+
+targets:
+
+  dev:
+    mode: development
+    default: true
+
+  prod:
+    mode: production
+    resources:
+      apps:
+        agent_securemcp:
+          name: "agent-securemcp"
